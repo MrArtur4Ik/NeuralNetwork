@@ -37,7 +37,8 @@ class NeuralNetwork:
 			inputs = new_inputs
 		return np.array(inputs)
 	
-	def train(self, inputs, expected_outputs, learning_rate=0.1):
+	'''Back propogation'''
+	def backpropogation(self, inputs, expected_outputs, learning_rate=0.1):
 		outputs = self.feedforward_all(inputs)
 		output = outputs.pop()
 		gradients = (output-np.array(expected_outputs))*sigmoid_dx(output)
@@ -76,3 +77,12 @@ def json_to_network(json: list):
 			neurons.append(Neuron(neuron[1:], neuron[0]))
 		layers.append(neurons)
 	return NeuralNetwork(layers, json["inputs_number"])
+
+def generate_random_network(neurons_count: list, weights_range: tuple = (-1, 1)):
+	rand = lambda count: [np.random.uniform(*weights_range) for i in range(count)]
+	layers = []
+	c = neurons_count[0]
+	for count in neurons_count[1:]:
+		layers.append([Neuron(rand(c)) for i in range(count)])
+		c = count
+	return NeuralNetwork(layers, neurons_count[0])
