@@ -47,11 +47,8 @@ class NeuralNetwork:
 		for layer in self.layers[::-1]:
 			for i, neuron in enumerate(layer):
 				gradient = gradients[i]
-				neuron.weights = neuron.weights-outputs[-1:][0]*gradient*learning_rate
+				neuron.weights = neuron.weights-outputs[-1]*gradient*learning_rate
 				neuron.bias = neuron.bias-gradient*learning_rate
-				#a[-1:][0] берёт последний элемент массива
-				'''for j, weight in enumerate(neuron.weights):
-					neuron.weights[j] = weight-outputs[-1:][0][j]*gradient*learning_rate'''
 			if layer_count > 1:
 				new_gradients = []
 				for i, out in enumerate(outputs[-1:][0]):
