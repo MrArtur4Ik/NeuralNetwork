@@ -1,11 +1,12 @@
 import numpy as np
+import io, struct
 
 sigmoid = lambda x: 1/(1+np.exp(-x))
 mse_loss = lambda y_true, y_pred: np.mean((y_true - y_pred)**2) #Средняя квадратичная ошибка
 sigmoid_dx = lambda x: x*(1-x) #Производная сигмоиды
 
 class Neuron:
-	def __init__(self, weights, bias=0):
+	def __init__(self, weights: np.array, bias=0):
 		self.weights = np.array(weights)
 		self.bias = float(bias)
 	
@@ -77,6 +78,37 @@ def json_to_network(json: list):
 			neurons.append(Neuron(neuron[1:], neuron[0]))
 		layers.append(neurons)
 	return NeuralNetwork(layers, json["inputs_number"])
+
+def serialize(neunet: NeuralNetwork, output_stream: io.BufferedWriter):
+	b = io.BytesIO()
+	b.write(struct.pack("!I", neunet.inputs_number))
+	b.write(struct.pack("!I", len(neunet.layers)))
+	for layer in neunet.layers:
+		b.write(struct.pack("!I", len(layer)))
+		for neuron in layer:
+			b.write(struct.pack("!I", len(neuron.weights)))
+			b.write(struct.pack("!d", neuron.bias))
+			for weight in neuron.weights:
+				b.write(struct.pack("!d", weight))
+	output_stream.write(b.getvalue())
+
+def deserialize(input_stream: io.BufferedReader) -> NeuralNetwork:
+	layers = []
+	inputs_number = struct.unpack("!I", input_stream.read(4))[0]
+	layers_count = struct.unpack("!I", input_stream.read(4))[0]
+	for i in range(layers_count):
+		neuron_count = struct.unpack("!I", input_stream.read(4))[0]
+		layer = []
+		for j in range(neuron_count):
+			weights_count = struct.unpack("!I", input_stream.read(4))[0]
+			bias = struct.unpack("!d", input_stream.read(8))[0]
+			weights = []
+			for k in range(weights_count):
+				weights.append(struct.unpack("!d", input_stream.read(8))[0])
+			layer.append(Neuron(weights, bias))
+		layers.append(layer)
+	return NeuralNetwork(layers, inputs_number)
+
 
 def generate_random_network(neurons_count: list, weights_range: tuple = (-1, 1)):
 	rand = lambda count: [np.random.uniform(*weights_range) for i in range(count)]
